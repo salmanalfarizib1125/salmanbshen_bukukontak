@@ -36,7 +36,15 @@ class Kontak {
 }
 
 // Global list untuk menyimpan daftar kontak agar dapat diakses di berbagai halaman
-List<Kontak> globalDaftarKontak = [];
+// Data diri ditambahkan di sini agar otomatis muncul di tab Favorit (Tugas 3)
+List<Kontak> globalDaftarKontak = [
+  Kontak(
+    nama: 'Bimo Nugroho',
+    email: 'GANTI_EMAIL_KAMU@gmail.com',
+    noHp: 'GANTI_NOMOR_HP_KAMU',
+    isFavorit: true,
+  ),
+];
 
 class BerandaPage extends StatefulWidget {
   const BerandaPage({super.key});
@@ -164,7 +172,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                     );
                   },
                 ),
-          
+
           // Tab 2: Daftar Kontak Favorit
           daftarFavorit.isEmpty
               ? const Center(child: Text('Belum ada kontak favorit'))
