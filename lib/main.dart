@@ -144,9 +144,28 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: globalDaftarKontak.length,
                   itemBuilder: (context, index) {
                     final kontak = globalDaftarKontak[index];
+                    
+                    // TUGAS 3: Mengambil inisial huruf pertama nama (huruf kapital)
+                    final String inisial = kontak.nama.isNotEmpty 
+                        ? kontak.nama[0].toUpperCase() 
+                        : '?';
+
                     return ListTile(
-                      leading: const Icon(Icons.person, color: Colors.black54),
-                      title: Text(kontak.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      // TUGAS 3: Mengubah Icon menjadi CircleAvatar berinisial
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          inisial,
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        kontak.nama, 
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text('${kontak.email}\n${kontak.noHp}'),
                       isThreeLine: true,
                       // Tombol bintang interaktif untuk mengubah status favorit
@@ -172,9 +191,28 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: daftarFavorit.length,
                   itemBuilder: (context, index) {
                     final kontak = daftarFavorit[index];
+
+                    // TUGAS 3: Inisial untuk tab favorit
+                    final String inisial = kontak.nama.isNotEmpty 
+                        ? kontak.nama[0].toUpperCase() 
+                        : '?';
+
                     return ListTile(
-                      leading: const Icon(Icons.person, color: Colors.black54),
-                      title: Text(kontak.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      // TUGAS 3: CircleAvatar inisial untuk tab favorit
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.amber,
+                        child: Text(
+                          inisial,
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        kontak.nama, 
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text('${kontak.email}\n${kontak.noHp}'),
                       isThreeLine: true,
                       trailing: const Icon(Icons.star, color: Colors.amber),
@@ -301,23 +339,21 @@ class TentangPage extends StatelessWidget {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Tempat Foto Profil (Bisa diganti dengan AssetImage atau NetworkImage)
-            const CircleAvatar(
+          children: const [
+            CircleAvatar(
               radius: 50,
               backgroundColor: Colors.orange,
-              // Jika ingin menggunakan foto lokal dari folder assets, gunakan:
               backgroundImage: AssetImage('assets/salman.png'),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'Salman Alfarizi Bashen',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text('XII RPL B', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 4),
-            const Text('SMK Negeri 5 Surakarta', style: TextStyle(fontSize: 16)),
+            SizedBox(height: 8),
+            Text('XII RPL B', style: TextStyle(fontSize: 16)),
+            SizedBox(height: 4),
+            Text('SMK Negeri 5 Surakarta', style: TextStyle(fontSize: 16)),
           ],
         ),
       ),
