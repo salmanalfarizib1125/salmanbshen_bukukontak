@@ -20,19 +20,19 @@ class BukuKontakApp extends StatelessWidget {
   }
 }
 
-// TUGAS 4: Properti kategori bertipe nullable (String?)
+// Model data kontak dengan properti kategori (Tugas 4)
 class Kontak {
   final String nama;
   final String email;
   final String noHp;
-  final String? kategori; // Properti nullable opsional
+  final String? kategori;
   bool isFavorit;
 
   Kontak({
     required this.nama,
     required this.email,
     required this.noHp,
-    this.kategori, // Opsional di constructor
+    this.kategori,
     this.isFavorit = false,
   });
 }
@@ -145,6 +145,8 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: globalDaftarKontak.length,
                   itemBuilder: (context, index) {
                     final kontak = globalDaftarKontak[index];
+                    
+                    // Inisial untuk CircleAvatar (Tugas 3)
                     final String inisial = kontak.nama.isNotEmpty 
                         ? kontak.nama[0].toUpperCase() 
                         : '?';
@@ -164,7 +166,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                         kontak.nama, 
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      // TUGAS 4: Menggunakan null-aware operator (??)[cite: 1]
+                      // Null-aware operator untuk Kategori (Tugas 4)
                       subtitle: Text(
                         'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
                       ),
@@ -210,7 +212,6 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                         kontak.nama, 
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      // TUGAS 4: Operator null-aware pada daftar favorit[cite: 1]
                       subtitle: Text(
                         'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
                       ),
@@ -237,7 +238,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
   }
 }
 
-// Halaman Form Tambah Kontak
+// Halaman Form Tambah Kontak (Tugas 5)[cite: 1]
 class TambahKontakPage extends StatefulWidget {
   const TambahKontakPage({super.key});
 
@@ -246,10 +247,12 @@ class TambahKontakPage extends StatefulWidget {
 }
 
 class _TambahKontakPageState extends State<TambahKontakPage> {
+  // TUGAS 5: GlobalKey untuk menangani status Form[cite: 1]
+  final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _noHpController = TextEditingController();
-  // TUGAS 4: Controller untuk input Kategori[cite: 1]
   final TextEditingController _kategoriController = TextEditingController();
 
   @override
@@ -262,16 +265,14 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
   }
 
   void _simpanKontak() {
-    if (_namaController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty &&
-        _noHpController.text.isNotEmpty) {
+    // TUGAS 5: Menjalankan validasi sebelum data disimpan[cite: 1]
+    if (_formKey.currentState!.validate()) {
       setState(() {
         globalDaftarKontak.add(
           Kontak(
-            nama: _namaController.text,
-            email: _emailController.text,
-            noHp: _noHpController.text,
-            // TUGAS 4: Jika input kategori kosong, simpan sebagai null[cite: 1]
+            nama: _namaController.text.trim(),
+            email: _emailController.text.trim(),
+            noHp: _noHpController.text.trim(),
             kategori: _kategoriController.text.trim().isEmpty 
                 ? null 
                 : _kategoriController.text.trim(),
@@ -292,47 +293,85 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              TextField(
-                controller: _namaController,
-                decoration: const InputDecoration(labelText: 'Nama Lengkap'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _noHpController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'No Handphone'),
-              ),
-              const SizedBox(height: 12),
-              // TUGAS 4: Input Kategori opsional[cite: 1]
-              TextField(
-                controller: _kategoriController,
-                decoration: const InputDecoration(
-                  labelText: 'Kategori (Opsional, ex: Keluarga/Teman/Kerja)',
+        // TUGAS 5: Membungkus input dengan widget Form dan _formKey[cite: 1]
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                // TUGAS 5: TextFormField Nama (Wajib diisi)[cite: 1]
+                TextFormField(
+                  controller: _namaController,
+                  decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Nama wajib diisi';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 12),
+                
+                // TUGAS 5: TextFormField Email (Wajib diisi & harus ada '@')[cite: 1]
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email wajib diisi';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Email harus mengandung karakter @';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                
+                // TUGAS 5: TextFormField No HP (Wajib angka & min 10 digit)[cite: 1]
+                TextFormField(
+                  controller: _noHpController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'No Handphone'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'No Handphone wajib diisi';
+                    }
+                    if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) {
+                      return 'No Handphone hanya boleh berisi angka';
+                    }
+                    if (value.trim().length < 10) {
+                      return 'No Handphone minimal 10 digit';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                
+                // TUGAS 4: TextFormField Kategori (Opsional / Tanpa validator)[cite: 1]
+                TextFormField(
+                  controller: _kategoriController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori (Opsional, ex: Keluarga/Teman/Kerja)',
                   ),
                 ),
-                onPressed: _simpanKontak,
-                child: const Text('Simpan'),
-              ),
-            ],
+                const SizedBox(height: 20),
+                
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade200,
+                    foregroundColor: Colors.black87,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: _simpanKontak,
+                  child: const Text('Simpan'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
