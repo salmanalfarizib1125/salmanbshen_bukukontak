@@ -20,22 +20,24 @@ class BukuKontakApp extends StatelessWidget {
   }
 }
 
-// Model data untuk menyimpan informasi kontak dan status favoritnya
+// TUGAS 4: Properti kategori bertipe nullable (String?)
 class Kontak {
   final String nama;
   final String email;
   final String noHp;
+  final String? kategori; // Properti nullable opsional
   bool isFavorit;
 
   Kontak({
     required this.nama,
     required this.email,
     required this.noHp,
+    this.kategori, // Opsional di constructor
     this.isFavorit = false,
   });
 }
 
-// Global list untuk menyimpan daftar kontak agar dapat diakses di berbagai halaman
+// Global list untuk menyimpan daftar kontak
 List<Kontak> globalDaftarKontak = [];
 
 class BerandaPage extends StatefulWidget {
@@ -62,7 +64,6 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    // Menyaring daftar kontak yang berstatus favorit untuk ditampilkan di tab Favorit
     List<Kontak> daftarFavorit = globalDaftarKontak.where((k) => k.isFavorit).toList();
 
     return Scaffold(
@@ -108,7 +109,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   context,
                   MaterialPageRoute(builder: (context) => const TambahKontakPage()),
                 ).then((_) {
-                  setState(() {}); // Memperbarui tampilan saat kembali dari halaman tambah
+                  setState(() {});
                 });
               },
             ),
@@ -144,14 +145,11 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: globalDaftarKontak.length,
                   itemBuilder: (context, index) {
                     final kontak = globalDaftarKontak[index];
-                    
-                    // TUGAS 3: Mengambil inisial huruf pertama nama (huruf kapital)
                     final String inisial = kontak.nama.isNotEmpty 
                         ? kontak.nama[0].toUpperCase() 
                         : '?';
 
                     return ListTile(
-                      // TUGAS 3: Mengubah Icon menjadi CircleAvatar berinisial
                       leading: CircleAvatar(
                         backgroundColor: Colors.blue,
                         child: Text(
@@ -166,9 +164,11 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                         kontak.nama, 
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('${kontak.email}\n${kontak.noHp}'),
+                      // TUGAS 4: Menggunakan null-aware operator (??)[cite: 1]
+                      subtitle: Text(
+                        'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
+                      ),
                       isThreeLine: true,
-                      // Tombol bintang interaktif untuk mengubah status favorit
                       trailing: IconButton(
                         icon: Icon(
                           kontak.isFavorit ? Icons.star : Icons.star_border,
@@ -191,14 +191,11 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: daftarFavorit.length,
                   itemBuilder: (context, index) {
                     final kontak = daftarFavorit[index];
-
-                    // TUGAS 3: Inisial untuk tab favorit
                     final String inisial = kontak.nama.isNotEmpty 
                         ? kontak.nama[0].toUpperCase() 
                         : '?';
 
                     return ListTile(
-                      // TUGAS 3: CircleAvatar inisial untuk tab favorit
                       leading: CircleAvatar(
                         backgroundColor: Colors.amber,
                         child: Text(
@@ -213,7 +210,10 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                         kontak.nama, 
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('${kontak.email}\n${kontak.noHp}'),
+                      // TUGAS 4: Operator null-aware pada daftar favorit[cite: 1]
+                      subtitle: Text(
+                        'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
+                      ),
                       isThreeLine: true,
                       trailing: const Icon(Icons.star, color: Colors.amber),
                     );
@@ -249,12 +249,15 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _noHpController = TextEditingController();
+  // TUGAS 4: Controller untuk input Kategori[cite: 1]
+  final TextEditingController _kategoriController = TextEditingController();
 
   @override
   void dispose() {
     _namaController.dispose();
     _emailController.dispose();
     _noHpController.dispose();
+    _kategoriController.dispose();
     super.dispose();
   }
 
@@ -268,10 +271,13 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
             nama: _namaController.text,
             email: _emailController.text,
             noHp: _noHpController.text,
+            // TUGAS 4: Jika input kategori kosong, simpan sebagai null[cite: 1]
+            kategori: _kategoriController.text.trim().isEmpty 
+                ? null 
+                : _kategoriController.text.trim(),
           ),
         );
       });
-      // Kembali ke halaman sebelumnya setelah berhasil menyimpan
       Navigator.pop(context);
     }
   }
@@ -286,45 +292,55 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _namaController,
-              decoration: const InputDecoration(labelText: 'Nama Lengkap'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _noHpController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'No Handphone'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.black87,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              TextField(
+                controller: _namaController,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _noHpController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'No Handphone'),
+              ),
+              const SizedBox(height: 12),
+              // TUGAS 4: Input Kategori opsional[cite: 1]
+              TextField(
+                controller: _kategoriController,
+                decoration: const InputDecoration(
+                  labelText: 'Kategori (Opsional, ex: Keluarga/Teman/Kerja)',
                 ),
               ),
-              onPressed: _simpanKontak,
-              child: const Text('Simpan'),
-            ),
-          ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                onPressed: _simpanKontak,
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Halaman Tentang (Profil Diri dengan Foto)
+// Halaman Tentang Profil Diri
 class TentangPage extends StatelessWidget {
   const TentangPage({super.key});
 
