@@ -21,12 +21,12 @@ class BukuKontakApp extends StatelessWidget {
   }
 }
 
-// Model data kontak (Tugas 4)
+// Model Data Kontak
 class Kontak {
-  final String nama;
-  final String email;
-  final String noHp;
-  final String? kategori;
+  String nama;
+  String email;
+  String noHp;
+  String? kategori;
   bool isFavorit;
 
   Kontak({
@@ -50,8 +50,6 @@ class BerandaPage extends StatefulWidget {
 
 class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
-  // TUGAS 6: Controller & StreamController untuk Pencarian
   late StreamController<String> _searchController;
   final TextEditingController _searchQueryController = TextEditingController();
 
@@ -59,7 +57,6 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Menggunakan broadcast stream agar bisa didengar oleh StreamBuilder
     _searchController = StreamController<String>.broadcast();
   }
 
@@ -67,8 +64,38 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
   void dispose() {
     _tabController.dispose();
     _searchQueryController.dispose();
-    _searchController.close(); // TUGAS 6: Wajib menutup stream controller agar tidak memory leak[cite: 1]
+    _searchController.close();
     super.dispose();
+  }
+
+  // FITUR DELETE (HAPUS KONTAK)
+  void _hapusKontak(Kontak kontak) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Kontak'),
+        content: Text('Apakah Anda yakin ingin menghapus ${kontak.nama}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                globalDaftarKontak.remove(kontak);
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Kontak berhasil dihapus')),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -116,7 +143,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const TambahKontakPage()),
+                  MaterialPageRoute(builder: (context) => const FormKontakPage()),
                 ).then((_) => setState(() {}));
               },
             ),
@@ -145,10 +172,9 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: Pencarian & Daftar Semua Kontak (Tugas 6)[cite: 1]
+          // Tab 1: Daftar Kontak & Pencarian
           Column(
             children: [
-              // TUGAS 6: Input TextField Pencarian Kontak[cite: 1]
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
@@ -159,19 +185,16 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (teks) {
-                    _searchController.add(teks); // TUGAS 6: Mengirim teks input ke stream[cite: 1]
+                    _searchController.add(teks);
                   },
                 ),
               ),
               Expanded(
-                // TUGAS 6: StreamBuilder untuk mendengarkan perubahan kata kunci pencarian[cite: 1]
                 child: StreamBuilder<String>(
                   stream: _searchController.stream,
                   initialData: '',
                   builder: (context, snapshot) {
                     final query = (snapshot.data ?? '').toLowerCase();
-
-                    // TUGAS 6: Filtering daftar kontak berdasarkan nama ATAU kategori (tidak case-sensitive)[cite: 1]
                     final filteredKontak = globalDaftarKontak.where((kontak) {
                       final namaMatch = kontak.nama.toLowerCase().contains(query);
                       final kategoriMatch = (kontak.kategori ?? '').toLowerCase().contains(query);
@@ -186,41 +209,54 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                       itemCount: filteredKontak.length,
                       itemBuilder: (context, index) {
                         final kontak = filteredKontak[index];
-                        final String inisial = kontak.nama.isNotEmpty 
-                            ? kontak.nama[0].toUpperCase() 
-                            : '?';
+                        final String inisial = kontak.nama.isNotEmpty ? kontak.nama[0].toUpperCase() : '?';
 
                         return ListTile(
-                          // CircleAvatar inisial (Tugas 3)[cite: 1]
                           leading: CircleAvatar(
                             backgroundColor: Colors.blue,
                             child: Text(
                               inisial,
-                              style: const TextStyle(
-                                color: Colors.white, 
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
                           ),
-                          title: Text(
-                            kontak.nama, 
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          // Subtitle dengan kategori (Tugas 4)[cite: 1]
+                          title: Text(kontak.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text(
                             'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
                           ),
                           isThreeLine: true,
-                          trailing: IconButton(
-                            icon: Icon(
-                              kontak.isFavorit ? Icons.star : Icons.star_border,
-                              color: kontak.isFavorit ? Colors.amber : Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                kontak.isFavorit = !kontak.isFavorit;
-                              });
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Tombol Favorit
+                              IconButton(
+                                icon: Icon(
+                                  kontak.isFavorit ? Icons.star : Icons.star_border,
+                                  color: kontak.isFavorit ? Colors.amber : Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    kontak.isFavorit = !kontak.isFavorit;
+                                  });
+                                },
+                              ),
+                              // FITUR UPDATE: Edit Kontak
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FormKontakPage(kontakUntukEdit: kontak),
+                                    ),
+                                  ).then((_) => setState(() {}));
+                                },
+                              ),
+                              // FITUR DELETE: Hapus Kontak
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _hapusKontak(kontak),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -238,25 +274,17 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
                   itemCount: daftarFavorit.length,
                   itemBuilder: (context, index) {
                     final kontak = daftarFavorit[index];
-                    final String inisial = kontak.nama.isNotEmpty 
-                        ? kontak.nama[0].toUpperCase() 
-                        : '?';
+                    final String inisial = kontak.nama.isNotEmpty ? kontak.nama[0].toUpperCase() : '?';
 
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.amber,
                         child: Text(
                           inisial,
-                          style: const TextStyle(
-                            color: Colors.white, 
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      title: Text(
-                        kontak.nama, 
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      title: Text(kontak.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
                         'Email: ${kontak.email}\nNo HP: ${kontak.noHp}\nKategori: ${kontak.kategori ?? 'Tanpa kategori'}',
                       ),
@@ -272,7 +300,7 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TambahKontakPage()),
+            MaterialPageRoute(builder: (context) => const FormKontakPage()),
           ).then((_) => setState(() {}));
         },
         child: const Icon(Icons.add, color: Colors.black87),
@@ -281,21 +309,33 @@ class _BerandaPageState extends State<BerandaPage> with SingleTickerProviderStat
   }
 }
 
-// Halaman Form Tambah Kontak (Tugas 5)[cite: 1]
-class TambahKontakPage extends StatefulWidget {
-  const TambahKontakPage({super.key});
+// Form Reusable untuk Tambah dan Edit Kontak (Fitur Update)
+class FormKontakPage extends StatefulWidget {
+  final Kontak? kontakUntukEdit;
+
+  const FormKontakPage({super.key, this.kontakUntukEdit});
 
   @override
-  State<TambahKontakPage> createState() => _TambahKontakPageState();
+  State<FormKontakPage> createState() => _FormKontakPageState();
 }
 
-class _TambahKontakPageState extends State<TambahKontakPage> {
+class _FormKontakPageState extends State<FormKontakPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _noHpController = TextEditingController();
-  final TextEditingController _kategoriController = TextEditingController();
+  late TextEditingController _namaController;
+  late TextEditingController _emailController;
+  late TextEditingController _noHpController;
+  late TextEditingController _kategoriController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mengisi form jika data sedang dalam mode Edit (Update)
+    _namaController = TextEditingController(text: widget.kontakUntukEdit?.nama ?? '');
+    _emailController = TextEditingController(text: widget.kontakUntukEdit?.email ?? '');
+    _noHpController = TextEditingController(text: widget.kontakUntukEdit?.noHp ?? '');
+    _kategoriController = TextEditingController(text: widget.kontakUntukEdit?.kategori ?? '');
+  }
 
   @override
   void dispose() {
@@ -308,27 +348,35 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
   void _simpanKontak() {
     if (_formKey.currentState!.validate()) {
-      setState(() {
+      if (widget.kontakUntukEdit == null) {
+        // Mode Tambah Kontak Baru
         globalDaftarKontak.add(
           Kontak(
             nama: _namaController.text.trim(),
             email: _emailController.text.trim(),
             noHp: _noHpController.text.trim(),
-            kategori: _kategoriController.text.trim().isEmpty 
-                ? null 
-                : _kategoriController.text.trim(),
+            kategori: _kategoriController.text.trim().isEmpty ? null : _kategoriController.text.trim(),
           ),
         );
-      });
+      } else {
+        // Mode Update Kontak yang Ada
+        widget.kontakUntukEdit!.nama = _namaController.text.trim();
+        widget.kontakUntukEdit!.email = _emailController.text.trim();
+        widget.kontakUntukEdit!.noHp = _noHpController.text.trim();
+        widget.kontakUntukEdit!.kategori =
+            _kategoriController.text.trim().isEmpty ? null : _kategoriController.text.trim();
+      }
       Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isEdit = widget.kontakUntukEdit != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Kontak'),
+        title: Text(isEdit ? 'Edit Kontak' : 'Tambah Kontak'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -342,12 +390,7 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                 TextFormField(
                   controller: _namaController,
                   decoration: const InputDecoration(labelText: 'Nama Lengkap'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nama wajib diisi';
-                    }
-                    return null;
-                  },
+                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Nama wajib diisi' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -355,12 +398,8 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(labelText: 'Email'),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Email wajib diisi';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Email harus mengandung karakter @';
-                    }
+                    if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
+                    if (!value.contains('@')) return 'Email harus mengandung karakter @';
                     return null;
                   },
                 ),
@@ -370,15 +409,9 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(labelText: 'No Handphone'),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'No Handphone wajib diisi';
-                    }
-                    if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) {
-                      return 'No Handphone hanya boleh berisi angka';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'No Handphone minimal 10 digit';
-                    }
+                    if (value == null || value.trim().isEmpty) return 'No Handphone wajib diisi';
+                    if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) return 'No Handphone hanya boleh berisi angka';
+                    if (value.trim().length < 10) return 'No Handphone minimal 10 digit';
                     return null;
                   },
                 ),
@@ -395,12 +428,10 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                     backgroundColor: Colors.grey.shade200,
                     foregroundColor: Colors.black87,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   onPressed: _simpanKontak,
-                  child: const Text('Simpan'),
+                  child: Text(isEdit ? 'Perbarui' : 'Simpan'),
                 ),
               ],
             ),
@@ -411,7 +442,7 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
   }
 }
 
-// Halaman Tentang Profil Diri
+// Halaman Tentang
 class TentangPage extends StatelessWidget {
   const TentangPage({super.key});
 
